@@ -47,7 +47,7 @@ def get_position_by_symbol(symbol: str, date: str):
     return result.to_dict(orient="records")
 
 
-def get_top_pnl(date: str, limit: int = 5):
+def get_top_pnl(date: str, limit: int = 3):
     """
     Return top profit-making positions.
     """
