@@ -7,3 +7,8 @@ pydantic
 yfinance
 scikit-learn
 joblib
+langchain
+langchain-core
+langchain-ollama
+langgraph
+streamlit

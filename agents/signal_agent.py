@@ -62,7 +62,8 @@ Explain the trading signal in simple professional English.
 Important rules:
 - Do not say this is guaranteed.
 - Do not give financial advice.
-- Mention that this is based on rule-based logic.
+- Include factors what are you using for the answer.
+- Mention that which signal are you using.
 - Use only the given tool result.
 """
 

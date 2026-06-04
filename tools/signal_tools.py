@@ -116,5 +116,5 @@ def get_signal_explanation(symbol: str):
     return {
         "symbol": symbol.upper(),
         "signal_data": signal_data,
-        "note": "This is a rule-based signal. In future, this can be replaced with an ML model.",
+        # "note": "This is a rule-based signal. In future, this can be replaced with an ML model.",
     }

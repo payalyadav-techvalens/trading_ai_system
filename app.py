@@ -8,6 +8,7 @@ from agents.risk_agent import handle_risk_question
 from memory.conversation_memory import add_to_memory, get_recent_memory
 from agents.signal_agent import handle_signal_question
 from agents.market_agent import handle_market_question
+from graph.trading_graph import run_trading_graph
 
 app = FastAPI(title="Trading AI Assistant")
 
@@ -15,6 +16,22 @@ app = FastAPI(title="Trading AI Assistant")
 class ChatRequest(BaseModel):
     question: str
     date: str = "2026-06-04"
+    thread_id: str = "default_thread"
+
+
+def extract_final_graph_answer(graph_result):
+    """
+    Extract final assistant response from LangGraph result.
+    """
+
+    messages = graph_result.get("messages", [])
+
+    if not messages:
+        return "No response generated from LangGraph."
+
+    final_message = messages[-1]
+
+    return final_message.content
 
 
 @app.get("/")
@@ -107,4 +124,38 @@ Answer generally and professionally.
         "tool_result": response["tool_result"],
         "answer": response["answer"],
         # "recent_memory": get_recent_memory(limit=5),
+    }
+
+@app.post("/chat-graph")
+def chat_graph(request: ChatRequest):
+    """
+    LangGraph-based chat endpoint.
+
+    This uses:
+    ChatOllama + LangChain tools + LangGraph workflow.
+    """
+
+    question = request.question
+
+    graph_result = run_trading_graph(
+        question=question,
+        thread_id=request.thread_id,
+    )
+
+    final_answer = extract_final_graph_answer(graph_result)
+
+    messages = graph_result.get("messages", [])
+
+    tool_calls = []
+
+    for message in messages:
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            tool_calls.extend(message.tool_calls)
+
+    return {
+    "question": question,
+    "answer": final_answer,
+    "tool_calls": tool_calls,
+    "mode": "langgraph",
+    "thread_id": request.thread_id,
     }
