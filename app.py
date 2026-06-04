@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from llm.ollama_client import ask_ollama
-from agents.supervisor_agent import route_question
+from agents.llm_router_agent import route_question_with_llm
 from agents.portfolio_agent import handle_portfolio_question
 from agents.risk_agent import handle_risk_question
 from memory.conversation_memory import add_to_memory, get_recent_memory
+from agents.signal_agent import handle_signal_question
 
 
 app = FastAPI(title="Trading AI Assistant")
@@ -37,7 +38,9 @@ def chat(request: ChatRequest):
 
     recent_memory = get_recent_memory(limit=5)
 
-    selected_agent = route_question(question)
+    router_response = route_question_with_llm(question)
+    selected_agent = router_response["agent"]
+    router_reason = router_response["reason"]
 
     if selected_agent == "portfolio_agent":
         response = handle_portfolio_question(
@@ -50,6 +53,12 @@ def chat(request: ChatRequest):
         response = handle_risk_question(
             question=question,
             date=date,
+            recent_memory=recent_memory,
+        )
+    
+    elif selected_agent == "signal_agent":
+        response = handle_signal_question(
+            question=question,
             recent_memory=recent_memory,
         )
 
@@ -87,8 +96,9 @@ Answer generally and professionally.
         "question": question,
         "date": date,
         "agent_used": response["agent_used"],
+        "router_reason": router_reason,
         "tool_used": response["tool_used"],
         "tool_result": response["tool_result"],
         "answer": response["answer"],
-        "recent_memory": get_recent_memory(limit=5),
+        # "recent_memory": get_recent_memory(limit=5),
     }

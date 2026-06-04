@@ -1,9 +1,21 @@
 from llm.ollama_client import ask_ollama
-from tools.portfolio_tools import (
-    calculate_gross_exposure,
-    calculate_net_exposure,
-    get_portfolio_summary,
-)
+from tools.tool_registry import execute_tool
+
+
+def select_risk_tool(question: str):
+    """
+    Select risk tool based on question.
+    """
+
+    q = question.lower()
+
+    if "gross exposure" in q:
+        return "calculate_gross_exposure"
+
+    if "net exposure" in q:
+        return "calculate_net_exposure"
+
+    return "risk_summary"
 
 
 def handle_risk_question(question: str, date: str, recent_memory=None):
@@ -12,39 +24,34 @@ def handle_risk_question(question: str, date: str, recent_memory=None):
     Handles exposure and portfolio risk-related questions.
     """
 
-    q = question.lower()
+    tool_used = select_risk_tool(question)
 
-    tool_used = None
-    tool_result = None
+    if tool_used == "calculate_gross_exposure":
+        tool_result = execute_tool(
+            tool_name="calculate_gross_exposure",
+            date=date,
+        )
 
-    if "gross exposure" in q:
-        tool_used = "calculate_gross_exposure"
-        tool_result = calculate_gross_exposure(date)
-
-    elif "net exposure" in q:
-        tool_used = "calculate_net_exposure"
-        tool_result = calculate_net_exposure(date)
-
-    elif "risk" in q or "exposure" in q:
-        tool_used = "risk_summary"
-
-        gross_exposure = calculate_gross_exposure(date)
-        net_exposure = calculate_net_exposure(date)
-        portfolio_summary = get_portfolio_summary(date)
-
-        tool_result = {
-            "gross_exposure": gross_exposure,
-            "net_exposure": net_exposure,
-            "portfolio_summary": portfolio_summary,
-        }
+    elif tool_used == "calculate_net_exposure":
+        tool_result = execute_tool(
+            tool_name="calculate_net_exposure",
+            date=date,
+        )
 
     else:
-        tool_used = "risk_summary"
-
         tool_result = {
-            "gross_exposure": calculate_gross_exposure(date),
-            "net_exposure": calculate_net_exposure(date),
-            "portfolio_summary": get_portfolio_summary(date),
+            "gross_exposure": execute_tool(
+                tool_name="calculate_gross_exposure",
+                date=date,
+            ),
+            "net_exposure": execute_tool(
+                tool_name="calculate_net_exposure",
+                date=date,
+            ),
+            "portfolio_summary": execute_tool(
+                tool_name="get_portfolio_summary",
+                date=date,
+            ),
         }
 
     prompt = f"""

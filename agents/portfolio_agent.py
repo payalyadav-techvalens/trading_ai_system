@@ -1,17 +1,11 @@
 from llm.ollama_client import ask_ollama
-from tools.portfolio_tools import (
-    get_positions,
-    get_position_by_symbol,
-    get_top_pnl,
-    get_top_loss,
-    get_portfolio_summary,
-)
+from tools.tool_registry import execute_tool
 
 
 def extract_symbol(question: str):
     """
     Basic symbol extraction.
-    Later we can replace this with LLM-based entity extraction.
+    Later we can replace this with LLM-based extraction.
     """
 
     known_symbols = ["TCS", "INFY", "HDFCBANK", "RELIANCE", "SBIN", "WIPRO", "LT"]
@@ -25,42 +19,57 @@ def extract_symbol(question: str):
     return None
 
 
+def select_portfolio_tool(question: str):
+    """
+    Select portfolio tool based on question.
+    """
+
+    q = question.lower()
+
+    if "summary" in q or "portfolio" in q:
+        return "get_portfolio_summary"
+
+    if "top profit" in q or "profit" in q or "highest pnl" in q:
+        return "get_top_pnl"
+
+    if "loss" in q or "negative pnl" in q:
+        return "get_top_loss"
+
+    if "position" in q or "symbol" in q:
+        return "get_position_by_symbol"
+
+    return "get_portfolio_summary"
+
+
 def handle_portfolio_question(question: str, date: str, recent_memory=None):
     """
     Portfolio Agent:
     Handles portfolio, position, PnL and symbol-related questions.
     """
 
-    q = question.lower()
+    tool_used = select_portfolio_tool(question)
 
-    tool_used = None
-    tool_result = None
-
-    if "summary" in q or "portfolio" in q:
-        tool_used = "get_portfolio_summary"
-        tool_result = get_portfolio_summary(date)
-
-    elif "top profit" in q or "profit" in q or "highest pnl" in q:
-        tool_used = "get_top_pnl"
-        tool_result = get_top_pnl(date)
-
-    elif "loss" in q or "negative pnl" in q:
-        tool_used = "get_top_loss"
-        tool_result = get_top_loss(date)
-
-    elif "position" in q or "symbol" in q:
+    if tool_used == "get_position_by_symbol":
         symbol = extract_symbol(question)
 
         if symbol:
-            tool_used = "get_position_by_symbol"
-            tool_result = get_position_by_symbol(symbol, date)
+            tool_result = execute_tool(
+                tool_name=tool_used,
+                symbol=symbol,
+                date=date,
+            )
         else:
             tool_used = "get_positions"
-            tool_result = get_positions(date)
+            tool_result = execute_tool(
+                tool_name=tool_used,
+                date=date,
+            )
 
     else:
-        tool_used = "get_portfolio_summary"
-        tool_result = get_portfolio_summary(date)
+        tool_result = execute_tool(
+            tool_name=tool_used,
+            date=date,
+        )
 
     prompt = f"""
 You are a Portfolio Agent in a Trading AI Assistant.
