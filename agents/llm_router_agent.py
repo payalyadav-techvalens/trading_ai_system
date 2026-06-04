@@ -36,6 +36,10 @@ Use this for:
 - gross exposure
 - net exposure
 - concentration
+- risk alerts
+- warning
+- breach
+- symbol concentration
 
 3. general_agent
 Use this for:
@@ -53,6 +57,16 @@ Use this for:
 - price trend
 - ML signal
 
+5. market_agent
+Use this for:
+- latest price
+- current price
+- market data
+- price trend
+- price movement
+- volume trend
+- latest volume
+
 User question:
 {question}
 
@@ -63,7 +77,7 @@ Return ONLY valid JSON in this exact format:
 }}
 
 Allowed values for agent:
-portfolio_agent, risk_agent, signal_agent, general_agent
+portfolio_agent, risk_agent, signal_agent, market_agent, general_agent
 """
 
     payload = {
@@ -83,7 +97,7 @@ portfolio_agent, risk_agent, signal_agent, general_agent
         agent = parsed_response.get("agent", "general_agent")
         reason = parsed_response.get("reason", "No reason provided")
 
-        if agent not in ["portfolio_agent", "risk_agent", "signal_agent", "general_agent"]:
+        if agent not in ["portfolio_agent", "risk_agent", "signal_agent", "market_agent", "general_agent"]:
             agent = "general_agent"
 
         return {

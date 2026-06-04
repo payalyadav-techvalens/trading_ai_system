@@ -1,13 +1,33 @@
 import pandas as pd
-
+from services.signal_service import rule_based_signal
+from services.market_data_service import fetch_market_data
 
 PRICES_FILE = "data/prices.csv"
 
 
-def load_prices():
+# def load_prices():
+#     """
+#     Load historical price data.
+#     """
+
+#     df = pd.read_csv(PRICES_FILE)
+#     df["date"] = pd.to_datetime(df["date"])
+#     return df
+
+def load_prices(symbol: str):
     """
-    Load historical price data.
+    Load price data.
+
+    First try live yfinance data.
+    If live data fails, fallback to prices.csv.
     """
+
+    if symbol:
+        live_df = fetch_market_data(symbol=symbol)
+
+        if not live_df.empty:
+            live_df["date"] = pd.to_datetime(live_df["date"])
+            return live_df
 
     df = pd.read_csv(PRICES_FILE)
     df["date"] = pd.to_datetime(df["date"])
@@ -21,7 +41,7 @@ def generate_signal(symbol: str):
     Later this function can be replaced with ML model prediction.
     """
 
-    df = load_prices()
+    df = load_prices(symbol)
 
     symbol_df = df[df["symbol"].str.upper() == symbol.upper()].copy()
 
@@ -47,30 +67,32 @@ def generate_signal(symbol: str):
     price_change = latest_price - previous_price
     price_change_pct = (price_change / previous_price) * 100 if previous_price != 0 else 0
 
-    if latest_price > avg_price and latest_volume > avg_volume:
-        signal = "BUY"
-        reason = "Latest price is above average price and volume is above average volume."
+    signal_output = rule_based_signal(
+        latest_price=latest_price,
+        previous_price=previous_price,
+        avg_price=avg_price,
+        latest_volume=latest_volume,
+        avg_volume=avg_volume,
+    )
 
-    elif latest_price < avg_price and latest_volume > avg_volume:
-        signal = "SELL"
-        reason = "Latest price is below average price while volume is above average volume."
-
-    else:
-        signal = "HOLD"
-        reason = "Price and volume conditions are not strong enough for buy or sell."
+    signal = signal_output["signal"]
+    reason = signal_output["reason"]
+    price_change = signal_output["price_change"]
+    price_change_pct = signal_output["price_change_pct"]
 
     return {
-        "symbol": symbol.upper(),
-        "latest_date": latest_row["date"].strftime("%Y-%m-%d"),
-        "latest_price": float(latest_price),
-        "previous_price": float(previous_price),
-        "price_change": float(price_change),
-        "price_change_pct": round(float(price_change_pct), 2),
-        "average_price": round(float(avg_price), 2),
-        "latest_volume": int(latest_volume),
-        "average_volume": round(float(avg_volume), 2),
-        "signal": signal,
-        "reason": reason,
+    "symbol": symbol.upper(),
+    "latest_date": latest_row["date"].strftime("%Y-%m-%d"),
+    "latest_price": float(latest_price),
+    "previous_price": float(previous_price),
+    "price_change": float(price_change),
+    "price_change_pct": round(float(price_change_pct), 2),
+    "average_price": round(float(avg_price), 2),
+    "latest_volume": int(latest_volume),
+    "average_volume": round(float(avg_volume), 2),
+    "signal": signal,
+    "reason": reason,
+    "signal_type": "RULE_BASED",
     }
 
 

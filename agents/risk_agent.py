@@ -14,6 +14,12 @@ def select_risk_tool(question: str):
 
     if "net exposure" in q:
         return "calculate_net_exposure"
+    
+    if "alert" in q or "warning" in q or "breach" in q:
+        return "generate_risk_alerts"
+
+    if "concentration" in q:
+        return "calculate_symbol_concentration"
 
     return "risk_summary"
 
@@ -35,6 +41,18 @@ def handle_risk_question(question: str, date: str, recent_memory=None):
     elif tool_used == "calculate_net_exposure":
         tool_result = execute_tool(
             tool_name="calculate_net_exposure",
+            date=date,
+        )
+
+    elif tool_used == "generate_risk_alerts":
+        tool_result = execute_tool(
+            tool_name="generate_risk_alerts",
+            date=date,
+        )
+
+    elif tool_used == "calculate_symbol_concentration":
+        tool_result = execute_tool(
+            tool_name="calculate_symbol_concentration",
             date=date,
         )
 

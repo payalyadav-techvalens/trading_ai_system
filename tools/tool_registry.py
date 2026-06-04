@@ -6,6 +6,14 @@ from tools.portfolio_tools import (
     calculate_gross_exposure,
     calculate_net_exposure,
     get_portfolio_summary,
+    calculate_symbol_concentration,
+    generate_risk_alerts,
+)
+from tools.market_tools import (
+    get_latest_price,
+    get_price_trend,
+    get_volume_trend,
+    get_market_summary,
 )
 from tools.signal_tools import generate_signal, get_signal_explanation
 
@@ -20,6 +28,12 @@ AVAILABLE_TOOLS = {
     "get_portfolio_summary": get_portfolio_summary,
     "generate_signal": generate_signal,
     "get_signal_explanation": get_signal_explanation,
+    "calculate_symbol_concentration": calculate_symbol_concentration,
+    "generate_risk_alerts": generate_risk_alerts,
+    "get_latest_price": get_latest_price,
+    "get_price_trend": get_price_trend,
+    "get_volume_trend": get_volume_trend,
+    "get_market_summary": get_market_summary,
 }
 
 

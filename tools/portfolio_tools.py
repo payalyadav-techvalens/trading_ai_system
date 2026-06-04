@@ -139,3 +139,118 @@ def get_portfolio_summary(date: str):
         "total_cost_value": float(total_cost_value),
         "total_pnl": float(total_pnl),
     }
+
+
+def calculate_symbol_concentration(date: str):
+    """
+    Calculate symbol-wise concentration percentage based on market value.
+    """
+
+    df = load_positions()
+    result = df[df["date"] == date]
+
+    if result.empty:
+        return f"No positions found for date {date}"
+
+    total_market_value = result["market_value"].abs().sum()
+
+    if total_market_value == 0:
+        return {
+            "date": date,
+            "message": "Total market value is zero, concentration cannot be calculated.",
+        }
+
+    result = result.copy()
+    result["concentration_pct"] = (
+        result["market_value"].abs() / total_market_value
+    ) * 100
+
+    result = result.sort_values(by="concentration_pct", ascending=False)
+
+    return result[
+        ["symbol", "fund", "market_value", "concentration_pct"]
+    ].to_dict(orient="records")
+
+
+def generate_risk_alerts(date: str):
+    """
+    Generate simple threshold-based risk alerts.
+    """
+
+    df = load_positions()
+    result = df[df["date"] == date]
+
+    if result.empty:
+        return f"No positions found for date {date}"
+
+    gross_exposure = result["market_value"].abs().sum()
+    net_exposure = result["market_value"].sum()
+    total_pnl = result["pnl"].sum()
+
+    total_market_value = result["market_value"].abs().sum()
+
+    alerts = []
+
+    if gross_exposure > 1000000:
+        alerts.append(
+            {
+                "alert_type": "HIGH_GROSS_EXPOSURE",
+                "severity": "HIGH",
+                "message": "Gross exposure is above the allowed threshold.",
+                "value": float(gross_exposure),
+                "threshold": 1000000,
+            }
+        )
+
+    if abs(net_exposure) > 900000:
+        alerts.append(
+            {
+                "alert_type": "HIGH_NET_EXPOSURE",
+                "severity": "MEDIUM",
+                "message": "Net exposure is above the allowed threshold.",
+                "value": float(net_exposure),
+                "threshold": 900000,
+            }
+        )
+
+    if total_pnl < -10000:
+        alerts.append(
+            {
+                "alert_type": "PORTFOLIO_LOSS_ALERT",
+                "severity": "HIGH",
+                "message": "Portfolio PnL is below loss threshold.",
+                "value": float(total_pnl),
+                "threshold": -10000,
+            }
+        )
+
+    for _, row in result.iterrows():
+        concentration_pct = (
+            abs(row["market_value"]) / total_market_value
+        ) * 100 if total_market_value != 0 else 0
+
+        if concentration_pct > 30:
+            alerts.append(
+                {
+                    "alert_type": "HIGH_SYMBOL_CONCENTRATION",
+                    "severity": "MEDIUM",
+                    "symbol": row["symbol"],
+                    "message": f"{row['symbol']} concentration is above 30%.",
+                    "value": round(float(concentration_pct), 2),
+                    "threshold": 30,
+                }
+            )
+
+    if not alerts:
+        return {
+            "date": date,
+            "status": "OK",
+            "message": "No major risk alerts found.",
+            "alerts": [],
+        }
+
+    return {
+        "date": date,
+        "status": "ALERT",
+        "alerts": alerts,
+    }

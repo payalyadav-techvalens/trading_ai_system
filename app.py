@@ -7,7 +7,7 @@ from agents.portfolio_agent import handle_portfolio_question
 from agents.risk_agent import handle_risk_question
 from memory.conversation_memory import add_to_memory, get_recent_memory
 from agents.signal_agent import handle_signal_question
-
+from agents.market_agent import handle_market_question
 
 app = FastAPI(title="Trading AI Assistant")
 
@@ -58,6 +58,12 @@ def chat(request: ChatRequest):
     
     elif selected_agent == "signal_agent":
         response = handle_signal_question(
+            question=question,
+            recent_memory=recent_memory,
+        )
+    
+    elif selected_agent == "market_agent":
+        response = handle_market_question(
             question=question,
             recent_memory=recent_memory,
         )
