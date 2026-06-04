@@ -8,3 +8,5 @@ agents/__pycache__/
 memory/__pycache__/
 __pycache__/
 memory/conversation_history.json
+.vscode/
+models/

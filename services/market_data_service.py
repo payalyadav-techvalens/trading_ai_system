@@ -47,12 +47,15 @@ def fetch_market_data(symbol: str, period: str = "7d", interval: str = "1d"):
         df = df.rename(
             columns={
                 "Date": "date",
+                "Open": "open",
+                "High": "high",
+                "Low": "low",
                 "Close": "close_price",
                 "Volume": "volume",
             }
         )
 
-        return df[["date", "symbol", "close_price", "volume"]]
+        return df[["date", "symbol", "open", "high", "low", "close_price", "volume"]]
 
     except Exception as e:
         print(f"Error while fetching market data for {symbol}: {str(e)}")

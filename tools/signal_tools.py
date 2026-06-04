@@ -1,6 +1,7 @@
 import pandas as pd
-from services.signal_service import rule_based_signal
+# from services.signal_service import rule_based_signal
 from services.market_data_service import fetch_market_data
+from services.signal_service import rule_based_signal, ml_signal_prediction
 
 PRICES_FILE = "data/prices.csv"
 
@@ -56,6 +57,7 @@ def generate_signal(symbol: str):
 
     latest_row = symbol_df.iloc[-1]
     previous_row = symbol_df.iloc[-2] if len(symbol_df) > 1 else latest_row
+    ml_output = ml_signal_prediction(symbol_df)
 
     avg_price = symbol_df["close_price"].mean()
     avg_volume = symbol_df["volume"].mean()
@@ -64,10 +66,7 @@ def generate_signal(symbol: str):
     latest_volume = latest_row["volume"]
     previous_price = previous_row["close_price"]
 
-    price_change = latest_price - previous_price
-    price_change_pct = (price_change / previous_price) * 100 if previous_price != 0 else 0
-
-    signal_output = rule_based_signal(
+    rule_output = rule_based_signal(
         latest_price=latest_price,
         previous_price=previous_price,
         avg_price=avg_price,
@@ -75,10 +74,19 @@ def generate_signal(symbol: str):
         avg_volume=avg_volume,
     )
 
-    signal = signal_output["signal"]
-    reason = signal_output["reason"]
-    price_change = signal_output["price_change"]
-    price_change_pct = signal_output["price_change_pct"]
+    if ml_output["signal_type"] == "ML_MODEL":
+        signal = ml_output["signal"]
+        reason = ml_output["reason"]
+        signal_type = ml_output["signal_type"]
+        confidence = ml_output["confidence"]
+    else:
+        signal = rule_output["signal"]
+        reason = rule_output["reason"]
+        signal_type = rule_output["signal_type"]
+        confidence = rule_output["confidence"]
+
+    price_change = rule_output["price_change"]
+    price_change_pct = rule_output["price_change_pct"]
 
     return {
     "symbol": symbol.upper(),
@@ -92,7 +100,9 @@ def generate_signal(symbol: str):
     "average_volume": round(float(avg_volume), 2),
     "signal": signal,
     "reason": reason,
-    "signal_type": "RULE_BASED",
+    "signal_type": signal_type,
+    "confidence": confidence,
+    "ml_status": ml_output,
     }
 
 

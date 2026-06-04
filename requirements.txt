@@ -5,3 +5,5 @@ requests
 python-dotenv
 pydantic
 yfinance
+scikit-learn
+joblib
