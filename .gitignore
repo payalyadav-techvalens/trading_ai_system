@@ -7,3 +7,4 @@ tools/__pycache__/
 agents/__pycache__/
 memory/__pycache__/
 __pycache__/
+memory/conversation_history.json
